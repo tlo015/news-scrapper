@@ -8,18 +8,25 @@ const request = require ('request');
 const cheerio = require ('cheerio');
 
 // Require models
-const db = require('./models')
+// const Headline = require('./models/Headline.js');
+// const Note = require ('./models/Note.js');
 
-const PORT = 3000;
+// connect to mongoose database
+const db = require("./models")
+
+const PORT = process.env.PORT || 3000;
 
 // Initialize Express
-var app = express();
+const app = express();
 
 // Middleware
-// Set up a static folder (public) for our web app
+// Use body-parser for handling form submissions
 app.use(bodyParser.urlencoded({ extended: true }));
+// Set up a static folder (public) for our web app
 app.use(express.static("public"));
 
+// Connect to Mongo DB
+mongoose.connect("mongodb://localhost:27017/NewYorkTimesScaper");
 
 //set up handlebars
 const exphbs = require('express-handlebars');
@@ -28,30 +35,91 @@ app.engine('handlebars', exphbs({
 }));
 app.set('view engine', 'handlebars');
 
-// Connect to Mongo DB
-// mongoose.connect("mongodb://localhost:27017/week18Populater");
 
-// Database configuration
-// Save the URL of our database as well as the name of our collection
-// var databaseUrl = "zoo";
-// var collections = ["animals"];
+// Scrape button 
+app.get('/scrape', function(req, res) {
+    request('https://www.nytimes.com/', function(error, response, html) {
+        var $ = cheerio.load(html);
 
-// Use mongojs to hook the database to the db variable
-// var db = mongojs(databaseUrl, collections);
+        var results = [];
 
-// This makes sure that any errors are logged if mongodb runs into an issue
-// db.on("error", function(error) {
-//   console.log("Database Error:", error);
-// });
+        //grab articles with an h2 tag 
+        $('article').each(function(i, element) {
 
-// Homepage
+            var title = $(this)
+                .children('h2, a')
+                .text();
+            var link = $(this)
+                .children('h2, a')
+                .attr('href');
+            var summary = $(this)
+                .children('.summary')
+                .text();
+            
+            if (title !== ""  && link !== "" && summary !== "") {
+                results.push({
+                    title: title,
+                    link: link,
+                    summary: summary
+                });
+            };
+  
+        });
+        res.render('home', {headlines: results});
+        console.log(results);
+        });
+
+        //grab articles with an h2 tag 
+        // $('article').each(function(i, element) {
+
+        //     var result = {};
+
+        //     result.title = $(this)
+        //         .children('h2, a')
+        //         .text();
+        //     result.link = $(this)
+        //         .children('h2, a')
+        //         .attr('href');
+        //     result.summary = $(this)
+        //         .children('.summary')
+        //         .text();
+
+        //     // Create a new Article using the `result` object built from scraping
+        //     db.Headline.create(result)
+        //         .then(function(dbArticle) {
+        //         // View the added result in the console
+        //         console.log(dbArticle);
+        //         })
+        //         .catch(function(err) {
+        //         // If an error occurred, send it to the client
+        //         return res.json(err);
+        //         });   
+        // });
+        
+    //});         
+});
+
+//get 
 app.get('/', function(req, res) {
+    // db.Headline.find({}, function(error, found) {
+    //     if (error) {
+    //         console.log(error);
+    //     }
+    //     else {
+    //         res.render('home');
+    //     }
+    // });
     res.render('home');
-  });
+});
 
+// save articles to database
 app.get('/saved', function(req, res) {
+
     res.render('saved')
 });
+
+// save article with note
+
 
 // Set the app to listen on port 3000
 app.listen(3000, function() {

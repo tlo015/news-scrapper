@@ -1,4 +1,22 @@
-<div class="container-fluid">
+<div class="container">
     <h2>Mongo Scraper</h2>
     <h5>NEW YORK TIMES EDITION</h5>
+</div>
+
+<div class="container">
+    {{#if headlines}}
+        {{#each headlines}}
+        <div class="card">
+            <div class="card-header">
+                <a href="{{this.link}}"> {{this.title}} </a>
+                <a href="{{this.id}}" type="button" class="btn"> Save</a>
+            </div>
+
+            <div class="card-body">
+                {{this.summary}}
+            </div>
+        </div>
+        {{/each}}
+    {{/if}}
+
 </div>
